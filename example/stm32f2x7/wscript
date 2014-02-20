@@ -1,0 +1,115 @@
+#!/usr/bin/env python
+# encoding: utf-8
+#***************************************************************//**
+#
+# @file simple_discovery.py
+#
+# @author   Logan Gunthorpe <logang@deltatee.com>
+#
+# @brief    simple device discovery
+#
+# Copyright (c) Deltatee Enterprises Ltd. 2013
+# All rights reserved.
+#
+#*******************************************************************/
+
+ 
+# Redistribution and use in source and binary forms, with or without
+# modification,are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+# 3. The name of the author may not be used to endorse or promote products
+#    derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+# EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+# TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# Author: Logan Gunthorpe <logang@deltatee.com>
+
+
+import sys
+import os
+
+sys.path.append("stmlib/waftools")
+sys.path.append("../../lwip/waftools")
+
+from waflib import Configure, Build, Context, Options
+Configure.autoconfig = True
+Context.classes.remove(Build.InstallContext)
+Context.classes.remove(Build.UninstallContext)
+
+from waflib.Tools import c_preproc
+c_preproc.go_absolute = True
+
+def options(opt):
+    opt.load("gcc")
+    opt.load("stm32 lwip")
+
+    opt.add_option("-c", "--config", action="store",
+                   default="DEFAULT",
+                   help="configuration to use [default: %default]");
+
+    opt.add_option("-s", "--test", action="store",
+                   help="test to build/run")
+    opt.add_option("-D", "--define", action="append", default=[],
+                   help="create define")
+
+
+def configure(ctx):
+    ctx.load("gcc")
+    ctx.load("stm32 version objcopy")
+
+    ctx.env.INCLUDES += ["../cfg", "../build", "../src"]
+    ctx.env.CFLAGS = ["-O2", "-Wall", "-Werror", "-std=gnu99",
+                      "-ffunction-sections", "-fdata-sections"]
+    ctx.env.LINKFLAGS = ["-Wl,-gc-sections"]
+
+    cfg = ctx.options.config.upper()
+    ctx.env.DEFINES = ["CONFIG_" + cfg]
+    ctx.env.DEFINES += ctx.options.define
+
+    ctx.msg('Selecting configuration', cfg)
+
+    ctx.env.STMPROGFLAGS_run += " -t"
+
+    ctx.env.LWIP_FEATURES = "stm32"
+    ctx.env.LWIP_PORT = "stm32f2x7"
+    ctx.load("lwip")
+
+
+def build(ctx):
+    ctx.load("stm32 lwip version")
+
+    tgt = "example"
+    main = "src/main.c"
+    test = Options.options.test
+    if test:
+        main = "tests/%s.c" % test
+        tgt = test
+
+    sources = ctx.path.ant_glob("src/*.c", excl="src/main.c")
+    sources += ctx.lwip_apps("iperf/iperf_server.c",
+                             "mdns/mdns_responder.c",
+                             "tcpecho_raw/echo.c",
+                             "simple_discovery/simple_discovery.c")
+
+    ctx.program(source=[main] + sources,
+                target=tgt,
+                features="stm32 objcopy",
+                objcopy_bfdname="binary",
+                use="stmlib lwip")
+
+    ctx.flash(tgt + ".bin",
+              port="/dev/ttyCOM5")
