@@ -2,18 +2,18 @@
 # encoding: utf-8
 #***************************************************************//**
 #
-# @file simple_discovery.py
+# @file wscript
 #
 # @author   Logan Gunthorpe <logang@deltatee.com>
 #
-# @brief    simple device discovery
+# @brief    Build Script
 #
 # Copyright (c) Deltatee Enterprises Ltd. 2013
 # All rights reserved.
 #
 #*******************************************************************/
 
- 
+
 # Redistribution and use in source and binary forms, with or without
 # modification,are permitted provided that the following conditions are met:
 #
