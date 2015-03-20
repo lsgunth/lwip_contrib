@@ -58,6 +58,9 @@ A record requests for the following domain names:
                           mac address)
 4. *hostname*-*mac_address*.local
 
+Note: the mDNS app requires LWIP_IGMP and SO_REUSE options to be enabled in
+your lwipopts config. NETIF_FLAG_IGMP must also be enabled in the interface
+you are using.
 
 
 apps/iperf
