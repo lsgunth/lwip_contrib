@@ -12,7 +12,7 @@
  *
  ********************************************************************/
 
-/* 
+/*
  * Redistribution and use in source and binary forms, with or without
  * modification,are permitted provided that the following conditions are met:
  *
@@ -151,6 +151,7 @@ static int special_strlen(const char *name)
 static int special_strcpy(char * dest, size_t dest_len, const char *name,
                           const struct pbuf *p)
 {
+    int i;
     int ret = 0;
     int link_ret = -1;
 
@@ -170,6 +171,17 @@ static int special_strcpy(char * dest, size_t dest_len, const char *name,
             ret++;
             if (link_ret < 0) link_ret = ret;
             x = (x << 8) | *name++;
+
+            if (x >= p->len)
+                return -1;
+
+            for (i = x; i < p->len; i++)
+                if (((char *)p->payload)[x] == 0)
+                    break;
+
+            if (i >= p->len)
+                return -1;
+
             name = &((char *)p->payload)[x & 0x3FFF];
             continue;
         }
