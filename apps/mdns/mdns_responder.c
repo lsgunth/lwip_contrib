@@ -148,13 +148,14 @@ static int special_strlen(const char *name)
     }
 }
 
-static int special_strcpy(char * dest, const char *name,
+static int special_strcpy(char * dest, size_t dest_len, const char *name,
                           const struct pbuf *p)
 {
     int ret = 0;
     int link_ret = -1;
 
     const char *end = ((char *) p->payload) + p->len;
+    char *dest_end = dest + dest_len;
 
     while (1) {
         int x = *name++;
@@ -178,7 +179,10 @@ static int special_strcpy(char * dest, const char *name,
         if (x == 0)
             return (link_ret >= 0) ? link_ret : ret;
 
-        ret +=x;
+        if (dest + x >= dest_end)
+            return -1;
+
+        ret += x;
         memcpy(dest, name, x);
         name += x;
         dest += x;
@@ -432,7 +436,7 @@ static int parse_question(struct mdns_state *ms, struct udp_pcb *upcb,
     int offset = 0;
 
     char buf[255];
-    offset = special_strcpy(buf, data, p);
+    offset = special_strcpy(buf, sizeof(buf), data, p);
 
     if (offset < 0)
         return -1;
