@@ -548,7 +548,7 @@ static void setup_hostnames(struct mdns_state *ms, struct netif *netif)
     sprintf(ms->hostnames[1], "%c%s-%02X%s", hostlen+3, netif->hostname,
             netif->hwaddr[5], dotlocal);
 
-    char macaddr[12];
+    char macaddr[2 * 6 + 1];
     sprintf(macaddr, "%02X%02X%02X%02X%02X%02X",
             netif->hwaddr[0], netif->hwaddr[1], netif->hwaddr[2],
             netif->hwaddr[3], netif->hwaddr[4], netif->hwaddr[5]);
